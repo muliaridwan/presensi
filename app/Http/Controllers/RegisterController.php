@@ -1,0 +1,114 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+
+class RegisterController extends Controller
+{
+    /**
+     * register
+     *
+     * @param  mixed $request
+     * @return void
+     */
+    public function register(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name'      => 'required',
+            'username'  => 'required|unique:users',
+            'email'     => 'required|email|unique:users',
+            'password'  => 'required|min:5|confirmed'
+
+            //password_confirmation
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 400);
+        }
+
+        $user = User::create([
+            'name'      => $request->name,
+            'username'  => $request->username,
+            'email'     => $request->email,
+            'password'  => Hash::make($request->password),
+            'upload_file' => 'data:image/jpeg;base64,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',
+            'role'     => 'user',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Register Success!',
+            'data'    => $user
+        ]);
+    }
+
+    public function update(Request $request,$id) {
+        $validator = Validator::make($request->all(), [
+            'name'  => 'required',
+            'email' => 'required',
+            'username'=>'required',
+        ]) ;
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 400);
+        }
+
+        $record = User::find($id);
+        if (!empty($record->id)) {
+            $record->name = $request->name;
+            $record->email= $request->email;
+            $record->username = $request->username;
+            $record->upload_file = $request->upload_file;
+            $record->save();
+
+            return response()->json([
+                'success'   => true,
+                'message'   => 'Update Berhasil',
+                'data'      => $record,
+            ]);
+        }
+        else {
+            return response()->json(['ID Tidak Tersedia'], 400);
+        }
+    }
+
+    public function detail($id) {
+        $record = User::find($id) ;
+        if (!empty($record->id)) {
+            return response()->json([
+                'success'   => true,
+                'message'   => 'OK',
+                'data'      => $record,
+            ]);
+        }
+        else {
+            return response()->json(['ID Tidak Tersedia'], 400);
+        }
+
+
+    }
+
+    public function useravatar(Request $request) {
+        $id = Auth::id();
+        $avatar = $request->upload_file;
+        $query = DB::table('users')->where('id','=',$id)->update(['upload_file' => $avatar]);
+        
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Success!',
+            'data'    => $query,
+        ]);
+        
+    }
+
+
+
+
+}
